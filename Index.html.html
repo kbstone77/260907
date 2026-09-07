@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{color-scheme:light dark}
+*{margin:0}
+body{margin:0;font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;background:#fcfcfb;color:#111}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style>
+<title>센텀 리버뷰 상환 민감도</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --ground:#F4F6F3; --panel:#FFFFFF; --panel-2:#FAFBF9;
+  --ink:#141C22; --ink-2:#3D4A53; --muted:#68757D; --faint:#9AA6AC;
+  --rule:#D8DEDA; --rule-2:#E9EDE9;
+  --accent:#1B5E76; --accent-soft:#E2EDF1;
+  --safe:#0F7048; --caut:#AE7A12; --fail:#A82E2E;
+  --safe-bg:rgba(15,112,72,.11); --caut-bg:rgba(174,122,18,.13); --fail-bg:rgba(168,46,46,.11);
+  --safe-ln:rgba(15,112,72,.45); --caut-ln:rgba(174,122,18,.5); --fail-ln:rgba(168,46,46,.42);
+  --shadow:0 1px 2px rgba(20,28,34,.05),0 8px 24px -12px rgba(20,28,34,.14);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ground:#11161A; --panel:#191F24; --panel-2:#1D242A;
+  --ink:#E6EBE7; --ink-2:#BEC8CC; --muted:#93A0A8; --faint:#6B777E;
+  --rule:#2C353B; --rule-2:#232B31;
+  --accent:#6FB2CB; --accent-soft:#1D2E36;
+  --safe:#359C71; --caut:#B98C10; --fail:#D5455C;
+  --safe-bg:rgba(53,156,113,.16); --caut-bg:rgba(185,140,16,.18); --fail-bg:rgba(213,69,92,.15);
+  --safe-ln:rgba(53,156,113,.55); --caut-ln:rgba(185,140,16,.6); --fail-ln:rgba(213,69,92,.5);
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px -12px rgba(0,0,0,.5);
+}}
+:root[data-theme="dark"]{
+  --ground:#11161A; --panel:#191F24; --panel-2:#1D242A;
+  --ink:#E6EBE7; --ink-2:#BEC8CC; --muted:#93A0A8; --faint:#6B777E;
+  --rule:#2C353B; --rule-2:#232B31;
+  --accent:#6FB2CB; --accent-soft:#1D2E36;
+  --safe:#359C71; --caut:#B98C10; --fail:#D5455C;
+  --safe-bg:rgba(53,156,113,.16); --caut-bg:rgba(185,140,16,.18); --fail-bg:rgba(213,69,92,.15);
+  --safe-ln:rgba(53,156,113,.55); --caut-ln:rgba(185,140,16,.6); --fail-ln:rgba(213,69,92,.5);
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px -12px rgba(0,0,0,.5);
+}
+*{box-sizing:border-box}
+body{background:var(--ground);color:var(--ink);
+  font-family:"IBM Plex Sans KR","Malgun Gothic",system-ui,sans-serif;font-weight:400;
+  line-height:1.62;-webkit-font-smoothing:antialiased;padding:0 20px 72px}
+.wrap{max-width:1180px;margin:0 auto}
+.num,.mono{font-family:"IBM Plex Mono","Courier New",monospace;font-variant-numeric:tabular-nums}
+h1,h2,h3{font-family:"Gowun Batang","Nanum Myeongjo",serif;font-weight:700;text-wrap:balance;margin:0}
+.eyebrow{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);
+  font-weight:600;font-family:"IBM Plex Mono",monospace}
+
+/* masthead */
+header{padding:52px 0 26px;border-bottom:2px solid var(--ink)}
+h1{font-size:clamp(30px,4.6vw,46px);line-height:1.16;letter-spacing:-.015em;margin:12px 0 10px}
+.dek{color:var(--ink-2);font-size:15px;max-width:64ch;font-weight:300}
+.meta{display:flex;flex-wrap:wrap;gap:6px 22px;margin-top:20px;font-size:12px;color:var(--muted)}
+.meta b{color:var(--ink-2);font-weight:500}
+
+/* verdict */
+.verdict{margin:30px 0 0;background:var(--panel);border:1px solid var(--rule);
+  border-left:4px solid var(--accent);box-shadow:var(--shadow);padding:24px 28px}
+.verdict .lead{font-family:"Gowun Batang",serif;font-size:clamp(19px,2.5vw,26px);line-height:1.42;
+  font-weight:700;letter-spacing:-.01em}
+.verdict .lead .hi{color:var(--accent);white-space:nowrap}
+.verdict .snd{margin-top:12px;font-size:14.5px;color:var(--ink-2);font-weight:300}
+.verdict .snd .hi{color:var(--ink);font-weight:500;font-family:"IBM Plex Mono",monospace}
+.thr{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:1px;
+  margin-top:22px;background:var(--rule);border:1px solid var(--rule)}
+.thr div{background:var(--panel-2);padding:13px 16px}
+.thr dt{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.thr dd{margin:5px 0 0;font-size:19px;font-weight:500;font-family:"IBM Plex Mono",monospace;
+  font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.thr dd small{font-size:12px;color:var(--muted);font-weight:400;letter-spacing:0}
+
+section{margin-top:52px}
+.shead{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;
+  border-bottom:1px solid var(--ink);padding-bottom:9px;margin-bottom:8px}
+.shead h2{font-size:22px;letter-spacing:-.01em}
+.shead .ax{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--accent);
+  letter-spacing:.14em;text-transform:uppercase;font-weight:600}
+.sub{color:var(--muted);font-size:13px;margin:10px 0 18px;max-width:82ch;font-weight:300}
+.sub code{font-family:"IBM Plex Mono",monospace;font-size:12px;background:var(--accent-soft);
+  color:var(--accent);padding:1px 5px}
+
+/* ledger formula */
+.ledger{background:var(--panel);border:1px solid var(--rule);padding:20px 24px;box-shadow:var(--shadow)}
+.ledger ol{margin:0;padding:0;list-style:none;font-family:"IBM Plex Mono",monospace;font-size:12.5px}
+.ledger li{display:flex;justify-content:space-between;gap:18px;padding:7px 0;
+  border-bottom:1px dashed var(--rule-2);align-items:baseline}
+.ledger li:last-child{border-bottom:0}
+.ledger li.tot{border-top:1.5px solid var(--ink);border-bottom:0;margin-top:6px;padding-top:11px;font-weight:600}
+.ledger .lb{color:var(--ink-2)}
+.ledger .lv{font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--ink)}
+.ledger .lv em{font-style:normal;color:var(--accent);font-weight:600}
+
+/* tables */
+.tw{overflow-x:auto;background:var(--panel);border:1px solid var(--rule);box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:13px;min-width:820px}
+caption{text-align:left;padding:14px 18px 12px;font-size:12px;color:var(--muted);
+  border-bottom:1px solid var(--rule);font-weight:300}
+caption b{color:var(--ink-2);font-weight:600}
+thead th{font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);
+  font-weight:600;text-align:right;padding:11px 13px;border-bottom:1.5px solid var(--ink);
+  white-space:nowrap;vertical-align:bottom}
+thead th:first-child{text-align:left}
+thead th.gp{border-left:1px solid var(--rule);color:var(--faint)}
+tbody th{text-align:left;font-weight:500;padding:9px 13px;white-space:nowrap;
+  border-bottom:1px solid var(--rule-2);font-size:13px}
+tbody td{text-align:right;padding:9px 13px;border-bottom:1px solid var(--rule-2);white-space:nowrap}
+tbody tr:last-child th,tbody tr:last-child td{border-bottom:0}
+td.num,th .num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+td.dsc{font-weight:600} td.dsc .x{font-size:10px;color:var(--muted);margin-left:1px}
+td.neg{color:var(--fail)} td.sub{color:var(--muted);font-size:12px;border-left:1px solid var(--rule-2)}
+td.st{font-weight:600;color:var(--accent)}
+td.sm{text-align:left;font-size:11.5px;color:var(--muted);white-space:normal;min-width:110px}
+td.vd{text-align:center}
+tr.b-A th,tr.b-A td{background:var(--safe-bg)}
+tr.b-B th,tr.b-B td{background:var(--caut-bg)}
+tr.b-C th,tr.b-C td{background:var(--fail-bg)}
+tr.strong td.num,tr.strong th .num{font-weight:600}
+tr.be th,tr.be td{background:var(--panel);border-top:2px solid var(--accent);
+  border-bottom:2px solid var(--accent);font-weight:700;color:var(--accent)}
+tr.be td.num{font-weight:700;color:var(--accent)}
+tr.be td.neg,tr.be td.sub{color:var(--accent)}
+.belab{display:inline-block;margin-left:9px;font-family:"IBM Plex Sans KR",sans-serif;
+  font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;background:var(--accent);
+  color:var(--panel);padding:2px 7px;font-weight:600;vertical-align:1px}
+.chip{display:inline-block;font-size:10.5px;font-weight:600;padding:2.5px 9px;white-space:nowrap;
+  letter-spacing:.02em}
+.c-A{background:var(--safe);color:#fff} .c-B{background:var(--caut);color:#fff}
+.c-C{background:var(--fail);color:#fff}
+
+/* heatmap */
+.hm{overflow-x:auto;background:var(--panel);border:1px solid var(--rule);box-shadow:var(--shadow);padding:4px}
+table.grid{min-width:880px;font-size:13px;table-layout:fixed}
+table.grid thead th:first-child,table.grid th.rh{width:126px}
+table.grid thead th{text-align:center;padding:12px 8px 10px}
+table.grid thead th:first-child{text-align:left;font-size:10px;line-height:1.35;white-space:normal;vertical-align:bottom;padding-bottom:10px}
+th.rh{text-align:right !important;border-bottom:1px solid var(--panel);
+  border-right:1.5px solid var(--ink);padding-right:14px;font-weight:600}
+td.hc{position:relative;text-align:center;padding:11px 6px 9px;border:2px solid var(--panel);
+  cursor:default;transition:transform .12s ease,box-shadow .12s ease}
+td.hc:hover,td.hc:focus-visible{transform:scale(1.06);z-index:5;box-shadow:0 4px 14px rgba(0,0,0,.22);outline:none}
+td.hc:focus-visible{border-color:var(--accent)}
+.hv{display:block;font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;
+  font-size:14px;font-weight:600;line-height:1.2;letter-spacing:-.03em}
+.hd{display:block;font-family:"IBM Plex Mono",monospace;font-size:9.5px;color:var(--muted);margin-top:2px}
+.hb{position:absolute;top:3px;left:4px;font-family:"IBM Plex Mono",monospace;font-size:8.5px;
+  font-weight:600;opacity:.62;letter-spacing:.04em}
+.h-A{background:var(--safe-bg)} .h-B{background:var(--caut-bg)}
+.h-C{background:var(--fail-bg);background-image:repeating-linear-gradient(135deg,var(--fail-ln) 0 1px,transparent 1px 6px)}
+.h-A .hb{color:var(--safe)} .h-B .hb{color:var(--caut)} .h-C .hb{color:var(--fail)}
+.legend{display:flex;flex-wrap:wrap;gap:9px 24px;margin-top:16px;font-size:12px;color:var(--ink-2)}
+.legend span.k{display:inline-flex;align-items:center;gap:8px}
+.sw{width:26px;height:14px;display:inline-block;border:1px solid var(--rule)}
+.sw.a{background:var(--safe-bg)} .sw.b{background:var(--caut-bg)}
+.sw.c{background:var(--fail-bg);background-image:repeating-linear-gradient(135deg,var(--fail-ln) 0 1px,transparent 1px 6px)}
+.legend b{font-family:"IBM Plex Mono",monospace;color:var(--ink);font-weight:600}
+#tip{position:fixed;z-index:60;background:var(--ink);color:var(--ground);padding:9px 12px;
+  font-size:11.5px;line-height:1.6;font-family:"IBM Plex Mono",monospace;white-space:pre-line;
+  pointer-events:none;max-width:270px;box-shadow:0 6px 20px rgba(0,0,0,.32)}
+
+/* chart */
+.chart{background:var(--panel);border:1px solid var(--rule);box-shadow:var(--shadow);padding:8px 8px 4px}
+.chart svg{display:block;width:100%;height:auto}
+.ct{font-family:"IBM Plex Mono",monospace;font-size:10.5px;fill:var(--muted)}
+.ct.axt{font-size:11px;fill:var(--ink-2);font-weight:500}
+.rl{font-family:"IBM Plex Sans KR",sans-serif;font-size:13px;font-weight:600;paint-order:stroke fill;stroke:var(--panel);stroke-width:4px;stroke-linejoin:round}
+.rl2{font-family:"IBM Plex Mono",monospace;font-size:10px;paint-order:stroke fill;stroke:var(--panel);stroke-width:3.5px;stroke-linejoin:round}
+.mkl{font-family:"IBM Plex Mono",monospace;font-size:10.5px;fill:var(--ink);font-weight:500;paint-order:stroke fill;stroke:var(--panel);stroke-width:3.5px;stroke-linejoin:round}
+
+/* conclusion */
+.concl{margin-top:56px;background:var(--ink);color:var(--ground);padding:38px 34px}
+.concl .eyebrow{color:var(--accent)}
+:root[data-theme="dark"] .concl,:root:not([data-theme="light"]) .concl{border:1px solid var(--rule)}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]) .concl{border:0}}
+.concl h2{font-size:clamp(22px,3.2vw,33px);line-height:1.34;margin:12px 0 0;color:var(--ground)}
+.concl h2 u{text-decoration:none;border-bottom:3px solid var(--accent);padding-bottom:2px;white-space:nowrap}
+.concl p{margin:18px 0 0;font-size:14.5px;line-height:1.72;color:var(--rule);font-weight:300;max-width:76ch}
+.concl p b{color:var(--ground);font-weight:500}
+.concl .mono{color:var(--ground)}
+
+.caveat{margin-top:38px;border-top:1px solid var(--rule);padding-top:20px}
+.caveat h3{font-size:14px;margin-bottom:12px}
+.caveat ul{margin:0;padding-left:0;list-style:none;display:grid;gap:9px}
+.caveat li{font-size:12.5px;color:var(--muted);line-height:1.66;padding-left:20px;position:relative;font-weight:300}
+.caveat li:before{content:"—";position:absolute;left:0;color:var(--faint)}
+.caveat li b{color:var(--ink-2);font-weight:500}
+.warn{margin-top:20px;border:1px solid var(--fail-ln);background:var(--fail-bg);padding:13px 17px;
+  font-size:12.5px;color:var(--ink-2);line-height:1.62}
+.warn b{color:var(--fail);font-weight:600}
+.two{display:grid;gap:34px}
+@media (min-width:1000px){.two{grid-template-columns:1fr 1fr}}
+@media (prefers-reduced-motion:reduce){*{transition:none !important;animation:none !important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="eyebrow">대주단 심사 · 민감도 분석</div>
+  <h1>상환 가능 구간은 계획가에서 18%p 폭이다</h1>
+  <p class="dek">센텀 리버뷰 공동주택 신축사업 · 본PF 2,100억(Tr-A 1,700 + Tr-B 400) 2029-06 만기 일시상환.
+  앞서 작성한 연도별 현금흐름표를 고정 전제로 두고, 분양률과 분양가 두 축만 움직여 만기 상환 가능 여부를 판정했습니다.</p>
+  <div class="meta">
+    <span>세대수 <b>402</b>세대 (전 세대 일반분양)</span>
+    <span>계획 분양가 <b>공급 평당 2,950만원</b></span>
+    <span>총 분양수입 <b>3,868.4억</b></span>
+    <span>총투자비 <b>3,842.8억</b></span>
+    <span>후순위 <b>380억</b> (유보금 300 + 대여금 80)</span>
+  </div>
+</header>
+
+<div class="verdict">
+  <div class="lead">계획가를 지키면 <span class="hi">분양률 81.6%</span>가 원금 상환의 마지막 선이고,
+  100% 완판을 전제하면 <span class="hi">공급 평당 2,382만원</span>까지 견딘다.</div>
+  <div class="snd">두 선 사이가 이 사업의 전부입니다. 계획 시나리오(2,950만원 · 100%)의 완충은
+  <span class="hi">700.0억</span>, 누적 DSCR <span class="hi">1.333배</span> — 분양률로 환산하면 <span class="hi">18.4%p</span>,
+  약 <span class="hi">74세대</span>분입니다.</div>
+  <dl class="thr">
+    <div><dt>PF 원금 상환 한계 — 분양률</dt><dd>81.6<small>% @ 2,950만원</small></dd></div>
+    <div><dt>PF 원금 상환 한계 — 분양가</dt><dd>2,382<small>만원 @ 100%</small></dd></div>
+    <div><dt>기말현금 0 — 분양률</dt><dd>91.6<small>% @ 2,950만원</small></dd></div>
+    <div><dt>기말현금 0 — 분양가</dt><dd>2,690<small>만원 @ 100%</small></dd></div>
+  </dl>
+</div>
+
+<section>
+  <div class="shead"><span class="ax">모델</span><h2>상환 가용재원 산식</h2></div>
+  <p class="sub">현금흐름표의 <b>총유입 4,162.8억 · 총투자비 3,842.8억 · 본PF 인출 2,100억</b>을 분해해,
+  분양률(<code>X</code>)·분양가(<code>p</code>)에 연동되는 항목만 변수로 남겼습니다. 금융비용 458.1억과 인출 스케줄은 불변으로 고정했습니다.</p>
+  <div class="ledger">
+    <ol>
+      <li><span class="lb">(+) 총 분양수입 &nbsp;= (아파트 12,486.8평 × p + 근생 184.8억) × X</span><span class="lv"><em>변수</em></span></li>
+      <li><span class="lb">(+) 고정유입 &nbsp;· 시행사 출자·대여 100.0 + 이자상환계정 환입 30.2 + 이자수입 15.0</span><span class="lv">145.2</span></li>
+      <li><span class="lb">(+) 본PF 인출</span><span class="lv">2,100.0</span></li>
+      <li><span class="lb">(−) PF 상환 전 고정지출 &nbsp;· 총사업비 − 후순위 380 − 중도금이자후불 149.2</span><span class="lv">2,787.4</span></li>
+      <li><span class="lb">(−) 금융비용 및 수수료 &nbsp;· 인출 스케줄 불변 가정</span><span class="lv">458.1</span></li>
+      <li><span class="lb">(−) 세대수 연동비 &nbsp;× X · 분양대행수수료(아파트 12.06 + 근생 4.4)</span><span class="lv">16.5</span></li>
+      <li><span class="lb">(−) 분양금액 연동비 &nbsp;× p·X · 분양보증 13.4 + 중도금보증 7.3 + 학교용지부담금 30.9</span><span class="lv">51.6</span></li>
+      <li class="tot"><span class="lb">＝ 상환 가용재원 &nbsp;(p = 2,950 · X = 100% 기준)</span><span class="lv">2,800.0</span></li>
+      <li><span class="lb">판정 &nbsp;· 상환 가용재원 ≥ 2,100 → PF 원금 상환 가능 &nbsp;/ &nbsp;≥ 2,480 → 후순위까지 전액 + 기말현금</span><span class="lv"><em>DSCR = 가용 ÷ 2,100</em></span></li>
+    </ol>
+  </div>
+  <p class="sub" style="margin-top:14px">중도금이자후불제 지출 149.2억과 그 회수 149.2억은 동일 시점·동액으로 상쇄되어 양쪽에서 제외했습니다.
+  후순위 380억은 상환순위상 PF 이후이므로 가용재원에 포함했습니다 — 현금흐름표의 기말 누적 320.0억과 정확히 일치합니다(2,800.0 − 2,100 − 380).</p>
+</section>
+
+<section>
+  <div class="shead"><span class="ax">축 1</span><h2>분양률 민감도</h2></div>
+  <p class="sub">공급 평당 <b>2,950만원(계획가)</b> 고정 · 분양률 75~100%를 5%p 간격. 단위 억원.</p>
+  <div class="tw"><table>
+    <caption><b>손익분기 분양률 81.6%</b> — 85%에서 PF 원금은 상환되지만 후순위 250.0억이 미지급으로 남습니다. 95%부터 기말현금이 발생합니다.</caption>
+    <thead><tr><th scope="col">분양률</th><th scope="col">총 분양수입</th><th scope="col">상환 가용재원</th>
+    <th scope="col">누적 DSCR</th><th scope="col">PF 상환</th><th scope="col">기말 현금</th><th scope="col">미지급 발생액</th>
+    <th scope="col" class="gp">└ PF 미상환</th><th scope="col" class="gp">└ 후순위 미지급</th></tr></thead>
+    <tbody><tr class="b-C"><th scope="row"><span class="num">75%</span></th>
+<td class="num">2,901.3</td><td class="num">1,849.9</td><td class="num dsc">0.881<span class="x">x</span></td>
+<td class="vd"><span class="chip c-C">상환 불가</span></td>
+<td class="num">—</td><td class="num neg">630.1</td>
+<td class="num sub">250.1</td><td class="num sub">380.0</td></tr><tr class="b-C"><th scope="row"><span class="num">80%</span></th>
+<td class="num">3,094.7</td><td class="num">2,039.9</td><td class="num dsc">0.971<span class="x">x</span></td>
+<td class="vd"><span class="chip c-C">상환 불가</span></td>
+<td class="num">—</td><td class="num neg">440.1</td>
+<td class="num sub">60.1</td><td class="num sub">380.0</td></tr><tr class="b-B"><th scope="row"><span class="num">85%</span></th>
+<td class="num">3,288.1</td><td class="num">2,230.0</td><td class="num dsc">1.062<span class="x">x</span></td>
+<td class="vd"><span class="chip c-B">상환 가능</span></td>
+<td class="num">—</td><td class="num neg">250.0</td>
+<td class="num sub">—</td><td class="num sub">250.0</td></tr><tr class="b-B"><th scope="row"><span class="num">90%</span></th>
+<td class="num">3,481.6</td><td class="num">2,420.0</td><td class="num dsc">1.152<span class="x">x</span></td>
+<td class="vd"><span class="chip c-B">상환 가능</span></td>
+<td class="num">—</td><td class="num neg">60.0</td>
+<td class="num sub">—</td><td class="num sub">60.0</td></tr><tr class="b-A"><th scope="row"><span class="num">95%</span></th>
+<td class="num">3,675.0</td><td class="num">2,610.0</td><td class="num dsc">1.243<span class="x">x</span></td>
+<td class="vd"><span class="chip c-A">상환 가능</span></td>
+<td class="num">130.0</td><td class="num neg">—</td>
+<td class="num sub">—</td><td class="num sub">—</td></tr><tr class="b-A"><th scope="row"><span class="num">100%</span></th>
+<td class="num">3,868.4</td><td class="num">2,800.0</td><td class="num dsc">1.333<span class="x">x</span></td>
+<td class="vd"><span class="chip c-A">상환 가능</span></td>
+<td class="num">320.0</td><td class="num neg">—</td>
+<td class="num sub">—</td><td class="num sub">—</td></tr></tbody>
+  </table></div>
+</section>
+
+<section>
+  <div class="shead"><span class="ax">축 2</span><h2>분양가 민감도</h2></div>
+  <p class="sub">분양률 <b>100%</b> 고정 · 공급면적 기준 평당 2,300~3,000만원을 100만원 간격. 근린생활시설은 계획가(평당 3,500만원)로 고정했습니다. 단위 억원.</p>
+  <div class="tw"><table>
+    <caption><b>기말현금이 0이 되는 분양가는 공급 평당 2,690만원</b>(별도 행으로 표시)입니다. 100만원 격자에서는 2,700만원이 첫 양(+) 구간이며, 그 이상 행을 굵게 표시했습니다.</caption>
+    <thead><tr><th scope="col">평당가 (만원)</th><th scope="col">총 분양수입</th><th scope="col">상환 가용재원</th>
+    <th scope="col">누적 DSCR</th><th scope="col">PF 상환</th><th scope="col">기말 현금</th><th scope="col">미지급 발생액</th>
+    <th scope="col" class="gp">└ PF 미상환</th><th scope="col" class="gp">└ 후순위 미지급</th></tr></thead>
+    <tbody><tr class="b-C"><th scope="row"><span class="num">2,300</span></th>
+<td class="num">3,056.8</td><td class="num">1,999.2</td><td class="num dsc">0.952<span class="x">x</span></td>
+<td class="vd"><span class="chip c-C">상환 불가</span></td>
+<td class="num">—</td><td class="num neg">480.8</td>
+<td class="num sub">100.8</td><td class="num sub">380.0</td></tr><tr class="b-B"><th scope="row"><span class="num">2,400</span></th>
+<td class="num">3,181.6</td><td class="num">2,122.4</td><td class="num dsc">1.011<span class="x">x</span></td>
+<td class="vd"><span class="chip c-B">상환 가능</span></td>
+<td class="num">—</td><td class="num neg">357.6</td>
+<td class="num sub">—</td><td class="num sub">357.6</td></tr><tr class="b-B"><th scope="row"><span class="num">2,500</span></th>
+<td class="num">3,306.5</td><td class="num">2,245.6</td><td class="num dsc">1.069<span class="x">x</span></td>
+<td class="vd"><span class="chip c-B">상환 가능</span></td>
+<td class="num">—</td><td class="num neg">234.4</td>
+<td class="num sub">—</td><td class="num sub">234.4</td></tr><tr class="b-B"><th scope="row"><span class="num">2,600</span></th>
+<td class="num">3,431.4</td><td class="num">2,368.8</td><td class="num dsc">1.128<span class="x">x</span></td>
+<td class="vd"><span class="chip c-B">상환 가능</span></td>
+<td class="num">—</td><td class="num neg">111.2</td>
+<td class="num sub">—</td><td class="num sub">111.2</td></tr><tr class="be"><th scope="row"><span class="num">2,690</span><span class="belab">기말현금 0</span></th>
+<td class="num">3,544.1</td><td class="num">2,480.0</td><td class="num dsc">1.181<span class="x">x</span></td>
+<td class="vd"><span class="chip c-A">상환 가능</span></td><td class="num">0.0</td><td class="num neg">—</td>
+<td class="num sub">—</td><td class="num sub">—</td></tr><tr class="b-A strong"><th scope="row"><span class="num">2,700</span></th>
+<td class="num">3,556.2</td><td class="num">2,492.0</td><td class="num dsc">1.187<span class="x">x</span></td>
+<td class="vd"><span class="chip c-A">상환 가능</span></td>
+<td class="num">12.0</td><td class="num neg">—</td>
+<td class="num sub">—</td><td class="num sub">—</td></tr><tr class="b-A strong"><th scope="row"><span class="num">2,800</span></th>
+<td class="num">3,681.1</td><td class="num">2,615.2</td><td class="num dsc">1.245<span class="x">x</span></td>
+<td class="vd"><span class="chip c-A">상환 가능</span></td>
+<td class="num">135.2</td><td class="num neg">—</td>
+<td class="num sub">—</td><td class="num sub">—</td></tr><tr class="b-A strong"><th scope="row"><span class="num">2,900</span></th>
+<td class="num">3,806.0</td><td class="num">2,738.4</td><td class="num dsc">1.304<span class="x">x</span></td>
+<td class="vd"><span class="chip c-A">상환 가능</span></td>
+<td class="num">258.4</td><td class="num neg">—</td>
+<td class="num sub">—</td><td class="num sub">—</td></tr><tr class="b-A strong"><th scope="row"><span class="num">3,000</span></th>
+<td class="num">3,930.8</td><td class="num">2,861.6</td><td class="num dsc">1.363<span class="x">x</span></td>
+<td class="vd"><span class="chip c-A">상환 가능</span></td>
+<td class="num">381.6</td><td class="num neg">—</td>
+<td class="num sub">—</td><td class="num sub">—</td></tr></tbody>
+  </table></div>
+</section>
+
+<section>
+  <div class="shead"><span class="ax">교차</span><h2>분양률 × 분양가 매트릭스</h2></div>
+  <p class="sub">각 칸의 큰 숫자는 <b>기말현금(양수) 또는 미지급 발생액(음수)</b>, 작은 숫자는 <b>만기 누적 DSCR</b>입니다. 칸에 커서를 올리면 내역이 나옵니다. 단위 억원.</p>
+  <div class="hm"><table class="grid">
+    <thead><tr><th scope="col">분양률 ＼ 공급 평당가(만원)</th><th scope="col"><span class="num">2,300</span></th><th scope="col"><span class="num">2,400</span></th><th scope="col"><span class="num">2,500</span></th><th scope="col"><span class="num">2,600</span></th><th scope="col"><span class="num">2,700</span></th><th scope="col"><span class="num">2,800</span></th><th scope="col"><span class="num">2,900</span></th><th scope="col"><span class="num">3,000</span></th></tr></thead>
+    <tbody><tr><th scope="row" class="rh"><span class="num">75%</span></th><td class="hc h-C" tabindex="0" data-tip="평당 2,300만원 · 분양률 75%&#10;총 분양수입 2,292.6억 · 상환가용 1,249.3억&#10;누적 DSCR 0.595x&#10;미지급 1,230.7억 (PF 850.7 / 후순위 380.0)"><span class="hv">-1,231</span><span class="hd">0.59x</span><span class="hb">C</span></td><td class="hc h-C" tabindex="0" data-tip="평당 2,400만원 · 분양률 75%&#10;총 분양수입 2,386.2억 · 상환가용 1,341.7억&#10;누적 DSCR 0.639x&#10;미지급 1,138.3억 (PF 758.3 / 후순위 380.0)"><span class="hv">-1,138</span><span class="hd">0.64x</span><span class="hb">C</span></td><td class="hc h-C" tabindex="0" data-tip="평당 2,500만원 · 분양률 75%&#10;총 분양수입 2,479.9억 · 상환가용 1,434.1억&#10;누적 DSCR 0.683x&#10;미지급 1,045.9억 (PF 665.9 / 후순위 380.0)"><span class="hv">-1,046</span><span class="hd">0.68x</span><span class="hb">C</span></td><td class="hc h-C" tabindex="0" data-tip="평당 2,600만원 · 분양률 75%&#10;총 분양수입 2,573.5억 · 상환가용 1,526.5억&#10;누적 DSCR 0.727x&#10;미지급 953.5억 (PF 573.5 / 후순위 380.0)"><span class="hv">-953</span><span class="hd">0.73x</span><span class="hb">C</span></td><td class="hc h-C" tabindex="0" data-tip="평당 2,700만원 · 분양률 75%&#10;총 분양수입 2,667.2억 · 상환가용 1,618.9억&#10;누적 DSCR 0.771x&#10;미지급 861.1억 (PF 481.1 / 후순위 380.0)"><span class="hv">-861</span><span class="hd">0.77x</span><span class="hb">C</span></td><td class="hc h-C" tabindex="0" data-tip="평당 2,800만원 · 분양률 75%&#10;총 분양수입 2,760.8억 · 상환가용 1,711.3억&#10;누적 DSCR 0.815x&#10;미지급 768.7억 (PF 388.7 / 후순위 380.0)"><span class="hv">-769</span><span class="hd">0.81x</span><span class="hb">C</span></td><td class="hc h-C" tabindex="0" data-tip="평당 2,900만원 · 분양률 75%&#10;총 분양수입 2,854.5억 · 상환가용 1,803.7억&#10;누적 DSCR 0.859x&#10;미지급 676.3억 (PF 296.3 / 후순위 380.0)"><span class="hv">-676</span><span class="hd">0.86x</span><span class="hb">C</span></td><td class="hc h-C" tabindex="0" data-tip="평당 3,000만원 · 분양률 75%&#10;총 분양수입 2,948.1억 · 상환가용 1,896.1억&#10;누적 DSCR 0.903x&#10;미지급 583.9억 (PF 203.9 / 후순위 380.0)"><span class="hv">-584</span><span class="hd">0.90x</span><span class="hb">C</span></td></tr><tr><th scope="row" class="rh"><span class="num">80%</span></th><td class="hc h-C" tabindex="0" data-tip="평당 2,300만원 · 분양률 80%&#10;총 분양수입 2,445.4억 · 상환가용 1,399.3억&#10;누적 DSCR 0.666x&#10;미지급 1,080.7억 (PF 700.7 / 후순위 380.0)"><span class="hv">-1,081</span><span class="hd">0.67x</span><span class="hb">C</span></td><td class="hc h-C" tabindex="0" data-tip="평당 2,400만원 · 분양률 80%&#10;총 분양수입 2,545.3억 · 상환가용 1,497.8억&#10;누적 DSCR 0.713x&#10;미지급 982.2억 (PF 602.2 / 후순위 380.0)"><span class="hv">-982</span><span class="hd">0.71x</span><span class="hb">C</span></td><td class="hc h-C" tabindex="0" data-tip="평당 2,500만원 · 분양률 80%&#10;총 분양수입 2,645.2억 · 상환가용 1,596.4억&#10;누적 DSCR 0.760x&#10;미지급 883.6억 (PF 503.6 / 후순위 380.0)"><span class="hv">-884</span><span class="hd">0.76x</span><span class="hb">C</span></td><td class="hc h-C" tabindex="0" data-tip="평당 2,600만원 · 분양률 80%&#10;총 분양수입 2,745.1억 · 상환가용 1,695.0억&#10;누적 DSCR 0.807x&#10;미지급 785.0억 (PF 405.0 / 후순위 380.0)"><span class="hv">-785</span><span class="hd">0.81x</span><span class="hb">C</span></td><td class="hc h-C" tabindex="0" data-tip="평당 2,700만원 · 분양률 80%&#10;총 분양수입 2,845.0억 · 상환가용 1,793.5억&#10;누적 DSCR 0.854x&#10;미지급 686.5억 (PF 306.5 / 후순위 380.0)"><span class="hv">-686</span><span class="hd">0.85x</span><span class="hb">C</span></td><td class="hc h-C" tabindex="0" data-tip="평당 2,800만원 · 분양률 80%&#10;총 분양수입 2,944.9억 · 상환가용 1,892.1억&#10;누적 DSCR 0.901x&#10;미지급 587.9억 (PF 207.9 / 후순위 380.0)"><span class="hv">-588</span><span class="hd">0.90x</span><span class="hb">C</span></td><td class="hc h-C" tabindex="0" data-tip="평당 2,900만원 · 분양률 80%&#10;총 분양수입 3,044.8억 · 상환가용 1,990.7억&#10;누적 DSCR 0.948x&#10;미지급 489.3억 (PF 109.3 / 후순위 380.0)"><span class="hv">-489</span><span class="hd">0.95x</span><span class="hb">C</span></td><td class="hc h-C" tabindex="0" data-tip="평당 3,000만원 · 분양률 80%&#10;총 분양수입 3,144.7억 · 상환가용 2,089.2억&#10;누적 DSCR 0.995x&#10;미지급 390.8억 (PF 10.8 / 후순위 380.0)"><span class="hv">-391</span><span class="hd">0.99x</span><span class="hb">C</span></td></tr><tr><th scope="row" class="rh"><span class="num">85%</span></th><td class="hc h-C" tabindex="0" data-tip="평당 2,300만원 · 분양률 85%&#10;총 분양수입 2,598.2억 · 상환가용 1,549.3억&#10;누적 DSCR 0.738x&#10;미지급 930.7억 (PF 550.7 / 후순위 380.0)"><span class="hv">-931</span><span class="hd">0.74x</span><span class="hb">C</span></td><td class="hc h-C" tabindex="0" data-tip="평당 2,400만원 · 분양률 85%&#10;총 분양수입 2,704.4억 · 상환가용 1,654.0억&#10;누적 DSCR 0.788x&#10;미지급 826.0억 (PF 446.0 / 후순위 380.0)"><span class="hv">-826</span><span class="hd">0.79x</span><span class="hb">C</span></td><td class="hc h-C" tabindex="0" data-tip="평당 2,500만원 · 분양률 85%&#10;총 분양수입 2,810.5억 · 상환가용 1,758.7억&#10;누적 DSCR 0.837x&#10;미지급 721.3억 (PF 341.3 / 후순위 380.0)"><span class="hv">-721</span><span class="hd">0.84x</span><span class="hb">C</span></td><td class="hc h-C" tabindex="0" data-tip="평당 2,600만원 · 분양률 85%&#10;총 분양수입 2,916.7억 · 상환가용 1,863.4억&#10;누적 DSCR 0.887x&#10;미지급 616.6억 (PF 236.6 / 후순위 380.0)"><span class="hv">-617</span><span class="hd">0.89x</span><span class="hb">C</span></td><td class="hc h-C" tabindex="0" data-tip="평당 2,700만원 · 분양률 85%&#10;총 분양수입 3,022.8억 · 상환가용 1,968.1억&#10;누적 DSCR 0.937x&#10;미지급 511.9억 (PF 131.9 / 후순위 380.0)"><span class="hv">-512</span><span class="hd">0.94x</span><span class="hb">C</span></td><td class="hc h-C" tabindex="0" data-tip="평당 2,800만원 · 분양률 85%&#10;총 분양수입 3,128.9억 · 상환가용 2,072.9억&#10;누적 DSCR 0.987x&#10;미지급 407.1억 (PF 27.1 / 후순위 380.0)"><span class="hv">-407</span><span class="hd">0.99x</span><span class="hb">C</span></td><td class="hc h-B" tabindex="0" data-tip="평당 2,900만원 · 분양률 85%&#10;총 분양수입 3,235.1억 · 상환가용 2,177.6억&#10;누적 DSCR 1.037x&#10;미지급 302.4억 (PF 0.0 / 후순위 302.4)"><span class="hv">-302</span><span class="hd">1.04x</span><span class="hb">B</span></td><td class="hc h-B" tabindex="0" data-tip="평당 3,000만원 · 분양률 85%&#10;총 분양수입 3,341.2억 · 상환가용 2,282.3억&#10;누적 DSCR 1.087x&#10;미지급 197.7억 (PF 0.0 / 후순위 197.7)"><span class="hv">-198</span><span class="hd">1.09x</span><span class="hb">B</span></td></tr><tr><th scope="row" class="rh"><span class="num">90%</span></th><td class="hc h-C" tabindex="0" data-tip="평당 2,300만원 · 분양률 90%&#10;총 분양수입 2,751.1억 · 상환가용 1,699.2억&#10;누적 DSCR 0.809x&#10;미지급 780.8억 (PF 400.8 / 후순위 380.0)"><span class="hv">-781</span><span class="hd">0.81x</span><span class="hb">C</span></td><td class="hc h-C" tabindex="0" data-tip="평당 2,400만원 · 분양률 90%&#10;총 분양수입 2,863.5억 · 상환가용 1,810.1억&#10;누적 DSCR 0.862x&#10;미지급 669.9억 (PF 289.9 / 후순위 380.0)"><span class="hv">-670</span><span class="hd">0.86x</span><span class="hb">C</span></td><td class="hc h-C" tabindex="0" data-tip="평당 2,500만원 · 분양률 90%&#10;총 분양수입 2,975.8억 · 상환가용 1,921.0억&#10;누적 DSCR 0.915x&#10;미지급 559.0억 (PF 179.0 / 후순위 380.0)"><span class="hv">-559</span><span class="hd">0.91x</span><span class="hb">C</span></td><td class="hc h-C" tabindex="0" data-tip="평당 2,600만원 · 분양률 90%&#10;총 분양수입 3,088.2억 · 상환가용 2,031.9억&#10;누적 DSCR 0.968x&#10;미지급 448.1억 (PF 68.1 / 후순위 380.0)"><span class="hv">-448</span><span class="hd">0.97x</span><span class="hb">C</span></td><td class="hc h-B" tabindex="0" data-tip="평당 2,700만원 · 분양률 90%&#10;총 분양수입 3,200.6억 · 상환가용 2,142.8억&#10;누적 DSCR 1.020x&#10;미지급 337.2억 (PF 0.0 / 후순위 337.2)"><span class="hv">-337</span><span class="hd">1.02x</span><span class="hb">B</span></td><td class="hc h-B" tabindex="0" data-tip="평당 2,800만원 · 분양률 90%&#10;총 분양수입 3,313.0억 · 상환가용 2,253.6억&#10;누적 DSCR 1.073x&#10;미지급 226.4억 (PF 0.0 / 후순위 226.4)"><span class="hv">-226</span><span class="hd">1.07x</span><span class="hb">B</span></td><td class="hc h-B" tabindex="0" data-tip="평당 2,900만원 · 분양률 90%&#10;총 분양수입 3,425.4억 · 상환가용 2,364.5억&#10;누적 DSCR 1.126x&#10;미지급 115.5억 (PF 0.0 / 후순위 115.5)"><span class="hv">-115</span><span class="hd">1.13x</span><span class="hb">B</span></td><td class="hc h-B" tabindex="0" data-tip="평당 3,000만원 · 분양률 90%&#10;총 분양수입 3,537.8억 · 상환가용 2,475.4억&#10;누적 DSCR 1.179x&#10;미지급 4.6억 (PF 0.0 / 후순위 4.6)"><span class="hv">-5</span><span class="hd">1.18x</span><span class="hb">B</span></td></tr><tr><th scope="row" class="rh"><span class="num">95%</span></th><td class="hc h-C" tabindex="0" data-tip="평당 2,300만원 · 분양률 95%&#10;총 분양수입 2,903.9억 · 상환가용 1,849.2억&#10;누적 DSCR 0.881x&#10;미지급 630.8억 (PF 250.8 / 후순위 380.0)"><span class="hv">-631</span><span class="hd">0.88x</span><span class="hb">C</span></td><td class="hc h-C" tabindex="0" data-tip="평당 2,400만원 · 분양률 95%&#10;총 분양수입 3,022.6억 · 상환가용 1,966.3억&#10;누적 DSCR 0.936x&#10;미지급 513.7억 (PF 133.7 / 후순위 380.0)"><span class="hv">-514</span><span class="hd">0.94x</span><span class="hb">C</span></td><td class="hc h-C" tabindex="0" data-tip="평당 2,500만원 · 분양률 95%&#10;총 분양수입 3,141.2억 · 상환가용 2,083.3억&#10;누적 DSCR 0.992x&#10;미지급 396.7억 (PF 16.7 / 후순위 380.0)"><span class="hv">-397</span><span class="hd">0.99x</span><span class="hb">C</span></td><td class="hc h-B" tabindex="0" data-tip="평당 2,600만원 · 분양률 95%&#10;총 분양수입 3,259.8억 · 상환가용 2,200.3억&#10;누적 DSCR 1.048x&#10;미지급 279.7억 (PF 0.0 / 후순위 279.7)"><span class="hv">-280</span><span class="hd">1.05x</span><span class="hb">B</span></td><td class="hc h-B" tabindex="0" data-tip="평당 2,700만원 · 분양률 95%&#10;총 분양수입 3,378.4억 · 상환가용 2,317.4억&#10;누적 DSCR 1.104x&#10;미지급 162.6억 (PF 0.0 / 후순위 162.6)"><span class="hv">-163</span><span class="hd">1.10x</span><span class="hb">B</span></td><td class="hc h-B" tabindex="0" data-tip="평당 2,800만원 · 분양률 95%&#10;총 분양수입 3,497.0억 · 상환가용 2,434.4억&#10;누적 DSCR 1.159x&#10;미지급 45.6억 (PF 0.0 / 후순위 45.6)"><span class="hv">-46</span><span class="hd">1.16x</span><span class="hb">B</span></td><td class="hc h-A" tabindex="0" data-tip="평당 2,900만원 · 분양률 95%&#10;총 분양수입 3,615.7억 · 상환가용 2,551.5억&#10;누적 DSCR 1.215x&#10;기말현금 +71.5억"><span class="hv">+71</span><span class="hd">1.21x</span><span class="hb">A</span></td><td class="hc h-A" tabindex="0" data-tip="평당 3,000만원 · 분양률 95%&#10;총 분양수입 3,734.3억 · 상환가용 2,668.5억&#10;누적 DSCR 1.271x&#10;기말현금 +188.5억"><span class="hv">+189</span><span class="hd">1.27x</span><span class="hb">A</span></td></tr><tr><th scope="row" class="rh"><span class="num">100%</span></th><td class="hc h-C" tabindex="0" data-tip="평당 2,300만원 · 분양률 100%&#10;총 분양수입 3,056.8억 · 상환가용 1,999.2억&#10;누적 DSCR 0.952x&#10;미지급 480.8억 (PF 100.8 / 후순위 380.0)"><span class="hv">-481</span><span class="hd">0.95x</span><span class="hb">C</span></td><td class="hc h-B" tabindex="0" data-tip="평당 2,400만원 · 분양률 100%&#10;총 분양수입 3,181.6억 · 상환가용 2,122.4억&#10;누적 DSCR 1.011x&#10;미지급 357.6억 (PF 0.0 / 후순위 357.6)"><span class="hv">-358</span><span class="hd">1.01x</span><span class="hb">B</span></td><td class="hc h-B" tabindex="0" data-tip="평당 2,500만원 · 분양률 100%&#10;총 분양수입 3,306.5억 · 상환가용 2,245.6억&#10;누적 DSCR 1.069x&#10;미지급 234.4억 (PF 0.0 / 후순위 234.4)"><span class="hv">-234</span><span class="hd">1.07x</span><span class="hb">B</span></td><td class="hc h-B" tabindex="0" data-tip="평당 2,600만원 · 분양률 100%&#10;총 분양수입 3,431.4억 · 상환가용 2,368.8억&#10;누적 DSCR 1.128x&#10;미지급 111.2억 (PF 0.0 / 후순위 111.2)"><span class="hv">-111</span><span class="hd">1.13x</span><span class="hb">B</span></td><td class="hc h-A" tabindex="0" data-tip="평당 2,700만원 · 분양률 100%&#10;총 분양수입 3,556.2억 · 상환가용 2,492.0억&#10;누적 DSCR 1.187x&#10;기말현금 +12.0억"><span class="hv">+12</span><span class="hd">1.19x</span><span class="hb">A</span></td><td class="hc h-A" tabindex="0" data-tip="평당 2,800만원 · 분양률 100%&#10;총 분양수입 3,681.1억 · 상환가용 2,615.2억&#10;누적 DSCR 1.245x&#10;기말현금 +135.2억"><span class="hv">+135</span><span class="hd">1.25x</span><span class="hb">A</span></td><td class="hc h-A" tabindex="0" data-tip="평당 2,900만원 · 분양률 100%&#10;총 분양수입 3,806.0억 · 상환가용 2,738.4억&#10;누적 DSCR 1.304x&#10;기말현금 +258.4억"><span class="hv">+258</span><span class="hd">1.30x</span><span class="hb">A</span></td><td class="hc h-A" tabindex="0" data-tip="평당 3,000만원 · 분양률 100%&#10;총 분양수입 3,930.8억 · 상환가용 2,861.6억&#10;누적 DSCR 1.363x&#10;기말현금 +381.6억"><span class="hv">+382</span><span class="hd">1.36x</span><span class="hb">A</span></td></tr></tbody>
+  </table></div>
+  <div class="legend">
+    <span class="k"><i class="sw a"></i><b>A</b> PF 원금 + 후순위 380억 전액 상환, 기말현금 발생</span>
+    <span class="k"><i class="sw b"></i><b>B</b> PF 원금은 전액 상환, 후순위 일부·전부 미지급</span>
+    <span class="k"><i class="sw c"></i><b>C</b> PF 원금 미상환 — 만기 부도</span>
+  </div>
+  <div class="warn"><b>48칸 중 A는 6칸(12.5%)뿐입니다.</b> 분양률 80% 이하에서는 평당 3,000만원이어도 전 구간이 C이고,
+  분양률 90%·평당 3,000만원(계획가보다 50만원 높음)에서조차 −4.6억으로 A에 닿지 못합니다. 후순위 380억을 온전히 지급하는 조합은 사실상 계획 시나리오 근처에만 존재합니다.</div>
+</section>
+
+<section>
+  <div class="shead"><span class="ax">경계</span><h2>손익분기 경계선</h2></div>
+  <p class="sub">격자 사이의 값까지 이은 연속 경계입니다. 가로축 공급 평당가, 세로축 분양률. 점선 사각형이 위 교차표가 덮는 범위입니다.</p>
+  <div class="chart">
+  <svg viewBox="0 0 1000 470" role="img" aria-label="분양가와 분양률에 따른 PF 상환 가능 구간. 오른쪽 위가 전액 상환 구간, 왼쪽 아래가 원금 미상환 구간.">
+    <path d="M 642.9,414.0 631.0,406.5 619.4,399.1 607.8,391.6 596.5,384.2 585.2,376.7 574.1,369.2 563.2,361.8 552.4,354.3 541.8,346.8 531.2,339.4 520.8,331.9 510.6,324.5 500.4,317.0 490.4,309.5 480.5,302.1 470.8,294.6 461.1,287.2 451.6,279.7 442.2,272.2 432.9,264.8 423.7,257.3 414.6,249.8 405.6,242.4 396.7,234.9 388.0,227.5 379.3,220.0 370.7,212.5 362.2,205.1 353.9,197.6 345.6,190.2 337.4,182.7 329.3,175.2 321.3,167.8 313.3,160.3 305.5,152.8 297.8,145.4 290.1,137.9 282.5,130.5 275.0,123.0 267.6,115.5 260.2,108.1 253.0,100.6 245.8,93.2 238.6,85.7 231.6,78.2 224.6,70.8 217.7,63.3 210.9,55.8 204.1,48.4 197.4,40.9 190.8,33.5 184.2,26.0 L 64.0,26.0 L 64.0,414.0 Z" fill="var(--fail-bg)"/>
+    <path d="M 642.9,414.0 631.0,406.5 619.4,399.1 607.8,391.6 596.5,384.2 585.2,376.7 574.1,369.2 563.2,361.8 552.4,354.3 541.8,346.8 531.2,339.4 520.8,331.9 510.6,324.5 500.4,317.0 490.4,309.5 480.5,302.1 470.8,294.6 461.1,287.2 451.6,279.7 442.2,272.2 432.9,264.8 423.7,257.3 414.6,249.8 405.6,242.4 396.7,234.9 388.0,227.5 379.3,220.0 370.7,212.5 362.2,205.1 353.9,197.6 345.6,190.2 337.4,182.7 329.3,175.2 321.3,167.8 313.3,160.3 305.5,152.8 297.8,145.4 290.1,137.9 282.5,130.5 275.0,123.0 267.6,115.5 260.2,108.1 253.0,100.6 245.8,93.2 238.6,85.7 231.6,78.2 224.6,70.8 217.7,63.3 210.9,55.8 204.1,48.4 197.4,40.9 190.8,33.5 184.2,26.0 L 344.2,26.0 351.6,33.5 359.0,40.9 366.6,48.4 374.1,55.8 381.8,63.3 389.6,70.8 397.4,78.2 405.3,85.7 413.3,93.2 421.4,100.6 429.5,108.1 437.8,115.5 446.1,123.0 454.5,130.5 463.0,137.9 471.7,145.4 480.4,152.8 489.2,160.3 498.1,167.8 507.0,175.2 516.1,182.7 525.3,190.2 534.6,197.6 544.1,205.1 553.6,212.5 563.2,220.0 572.9,227.5 582.8,234.9 592.7,242.4 602.8,249.8 613.0,257.3 623.3,264.8 633.8,272.2 644.4,279.7 655.1,287.2 665.9,294.6 676.9,302.1 688.0,309.5 699.2,317.0 710.6,324.5 722.1,331.9 733.7,339.4 745.6,346.8 757.5,354.3 769.6,361.8 781.9,369.2 794.4,376.7 807.0,384.2 819.7,391.6 832.7,399.1 845.8,406.5 859.1,414.0 Z" fill="var(--caut-bg)"/>
+    <path d="M 859.1,414.0 845.8,406.5 832.7,399.1 819.7,391.6 807.0,384.2 794.4,376.7 781.9,369.2 769.6,361.8 757.5,354.3 745.6,346.8 733.7,339.4 722.1,331.9 710.6,324.5 699.2,317.0 688.0,309.5 676.9,302.1 665.9,294.6 655.1,287.2 644.4,279.7 633.8,272.2 623.3,264.8 613.0,257.3 602.8,249.8 592.7,242.4 582.8,234.9 572.9,227.5 563.2,220.0 553.6,212.5 544.1,205.1 534.6,197.6 525.3,190.2 516.1,182.7 507.0,175.2 498.1,167.8 489.2,160.3 480.4,152.8 471.7,145.4 463.0,137.9 454.5,130.5 446.1,123.0 437.8,115.5 429.5,108.1 421.4,100.6 413.3,93.2 405.3,85.7 397.4,78.2 389.6,70.8 381.8,63.3 374.1,55.8 366.6,48.4 359.0,40.9 351.6,33.5 344.2,26.0 L 868.0,26.0 L 868.0,414.0 Z" fill="var(--safe-bg)"/>
+    <line x1="89.9" y1="26" x2="89.9" y2="414" stroke="var(--rule-2)" stroke-width="1"/><line x1="193.7" y1="26" x2="193.7" y2="414" stroke="var(--rule-2)" stroke-width="1"/><line x1="297.4" y1="26" x2="297.4" y2="414" stroke="var(--rule-2)" stroke-width="1"/><line x1="401.2" y1="26" x2="401.2" y2="414" stroke="var(--rule-2)" stroke-width="1"/><line x1="504.9" y1="26" x2="504.9" y2="414" stroke="var(--rule-2)" stroke-width="1"/><line x1="608.6" y1="26" x2="608.6" y2="414" stroke="var(--rule-2)" stroke-width="1"/><line x1="712.4" y1="26" x2="712.4" y2="414" stroke="var(--rule-2)" stroke-width="1"/><line x1="816.1" y1="26" x2="816.1" y2="414" stroke="var(--rule-2)" stroke-width="1"/>
+    <line x1="64" y1="399.1" x2="868" y2="399.1" stroke="var(--rule-2)" stroke-width="1"/><line x1="64" y1="324.5" x2="868" y2="324.5" stroke="var(--rule-2)" stroke-width="1"/><line x1="64" y1="249.8" x2="868" y2="249.8" stroke="var(--rule-2)" stroke-width="1"/><line x1="64" y1="175.2" x2="868" y2="175.2" stroke="var(--rule-2)" stroke-width="1"/><line x1="64" y1="100.6" x2="868" y2="100.6" stroke="var(--rule-2)" stroke-width="1"/><line x1="64" y1="26.0" x2="868" y2="26.0" stroke="var(--rule-2)" stroke-width="1"/>
+    <rect x="141.8" y="26.0" width="363.1" height="373.1"
+      fill="none" stroke="var(--muted)" stroke-width="1" stroke-dasharray="4 4" opacity=".42"/>
+    <polyline points="642.9,414.0 631.0,406.5 619.4,399.1 607.8,391.6 596.5,384.2 585.2,376.7 574.1,369.2 563.2,361.8 552.4,354.3 541.8,346.8 531.2,339.4 520.8,331.9 510.6,324.5 500.4,317.0 490.4,309.5 480.5,302.1 470.8,294.6 461.1,287.2 451.6,279.7 442.2,272.2 432.9,264.8 423.7,257.3 414.6,249.8 405.6,242.4 396.7,234.9 388.0,227.5 379.3,220.0 370.7,212.5 362.2,205.1 353.9,197.6 345.6,190.2 337.4,182.7 329.3,175.2 321.3,167.8 313.3,160.3 305.5,152.8 297.8,145.4 290.1,137.9 282.5,130.5 275.0,123.0 267.6,115.5 260.2,108.1 253.0,100.6 245.8,93.2 238.6,85.7 231.6,78.2 224.6,70.8 217.7,63.3 210.9,55.8 204.1,48.4 197.4,40.9 190.8,33.5 184.2,26.0" fill="none" stroke="var(--fail)" stroke-width="2.5"/>
+    <polyline points="859.1,414.0 845.8,406.5 832.7,399.1 819.7,391.6 807.0,384.2 794.4,376.7 781.9,369.2 769.6,361.8 757.5,354.3 745.6,346.8 733.7,339.4 722.1,331.9 710.6,324.5 699.2,317.0 688.0,309.5 676.9,302.1 665.9,294.6 655.1,287.2 644.4,279.7 633.8,272.2 623.3,264.8 613.0,257.3 602.8,249.8 592.7,242.4 582.8,234.9 572.9,227.5 563.2,220.0 553.6,212.5 544.1,205.1 534.6,197.6 525.3,190.2 516.1,182.7 507.0,175.2 498.1,167.8 489.2,160.3 480.4,152.8 471.7,145.4 463.0,137.9 454.5,130.5 446.1,123.0 437.8,115.5 429.5,108.1 421.4,100.6 413.3,93.2 405.3,85.7 397.4,78.2 389.6,70.8 381.8,63.3 374.1,55.8 366.6,48.4 359.0,40.9 351.6,33.5 344.2,26.0" fill="none" stroke="var(--safe)" stroke-width="2.5" stroke-dasharray="7 4"/>
+    <line x1="64" y1="414" x2="868" y2="414" stroke="var(--ink)" stroke-width="1.5"/>
+    <line x1="64" y1="26" x2="64" y2="414" stroke="var(--ink)" stroke-width="1.5"/>
+    <text class="ct" x="89.9" y="432" text-anchor="middle">2,200</text><text class="ct" x="193.7" y="432" text-anchor="middle">2,400</text><text class="ct" x="297.4" y="432" text-anchor="middle">2,600</text><text class="ct" x="401.2" y="432" text-anchor="middle">2,800</text><text class="ct" x="504.9" y="432" text-anchor="middle">3,000</text><text class="ct" x="608.6" y="432" text-anchor="middle">3,200</text><text class="ct" x="712.4" y="432" text-anchor="middle">3,400</text><text class="ct" x="816.1" y="432" text-anchor="middle">3,600</text>
+    <text class="ct" x="54" y="403.1" text-anchor="end">75%</text><text class="ct" x="54" y="328.5" text-anchor="end">80%</text><text class="ct" x="54" y="253.8" text-anchor="end">85%</text><text class="ct" x="54" y="179.2" text-anchor="end">90%</text><text class="ct" x="54" y="104.6" text-anchor="end">95%</text><text class="ct" x="54" y="30.0" text-anchor="end">100%</text>
+    <text class="ct axt" x="466" y="456" text-anchor="middle">공급면적 기준 평당 분양가 (만원)</text>
+    <text class="ct axt" x="54" y="17" text-anchor="start">분양률</text>
+    <text class="rl" x="655.3" y="82.7" fill="var(--safe)">A · 전액 상환 + 이익</text>
+    <text class="rl2" x="655.3" y="97.7" fill="var(--safe)">PF 2,100 + 후순위 380 완제</text>
+    <text class="rl" x="528.2" y="261.8" text-anchor="middle" fill="var(--caut)">B · 후순위 미지급</text>
+    <text class="rl2" x="528.2" y="276.8" text-anchor="middle" fill="var(--caut)">PF 원금만 상환</text>
+    <text class="rl" x="126.2" y="317.0" fill="var(--fail)">C · PF 원금 미상환</text>
+    <text class="rl2" x="126.2" y="332.0" fill="var(--fail)">만기 부도</text>
+    <text class="rl2" x="258.6" y="119.5" text-anchor="end" fill="var(--fail)">PF 상환선 · 가용 2,100</text>
+    <text class="rl2" x="446.8" y="119.5" text-anchor="start" fill="var(--safe)">기말현금 0 선 · 가용 2,480</text>
+    <text class="ct" x="149.1" y="390.1" text-anchor="start" opacity=".85">교차표 범위</text>
+    <circle cx="479.0" cy="26.0" r="5.5" fill="var(--panel)" stroke="var(--ink)" stroke-width="2"/><text class="mkl" x="468.0" y="42.0" text-anchor="end">계획 분양가 2,950</text><text class="mkl" x="468.0" y="55.0" text-anchor="end" opacity=".72">+320.1억</text><circle cx="95.1" cy="26.0" r="5.5" fill="var(--panel)" stroke="var(--ink)" stroke-width="2"/><text class="mkl" x="106.1" y="42.0" text-anchor="start">민락동 실거래 환산 2,210</text><text class="mkl" x="106.1" y="55.0" text-anchor="start" opacity=".72">PF 211.4억 미상환</text>
+  </svg>
+  </div>
+  <div class="two" style="margin-top:26px">
+    <div>
+      <div class="tw"><table style="min-width:auto">
+        <caption>분양률별 손익분기 분양가 <b>(공급 평당, 만원)</b></caption>
+        <thead><tr><th scope="col">분양률</th><th scope="col">PF 상환선</th><th scope="col">기말현금 0 선</th></tr></thead>
+        <tbody><tr><th scope="row"><span class="num">76%</span></th><td class="num">3,176</td><td class="num">3,582</td></tr><tr><th scope="row"><span class="num">80%</span></th><td class="num">3,011</td><td class="num">3,396</td></tr><tr><th scope="row"><span class="num">84%</span></th><td class="num">2,861</td><td class="num">3,228</td></tr><tr><th scope="row"><span class="num">88%</span></th><td class="num">2,725</td><td class="num">3,075</td></tr><tr><th scope="row"><span class="num">92%</span></th><td class="num">2,601</td><td class="num">2,936</td></tr><tr><th scope="row"><span class="num">96%</span></th><td class="num">2,487</td><td class="num">2,808</td></tr><tr><th scope="row"><span class="num">100%</span></th><td class="num">2,382</td><td class="num">2,690</td></tr></tbody>
+      </table></div>
+    </div>
+    <div>
+      <p class="sub" style="margin-top:0">경계는 거의 직선으로 움직입니다. <b>분양률 1%p ≒ 분양가 약 27만원</b>이 서로를 대체합니다.
+      분양률이 5%p 떨어질 때 이를 상쇄하려면 평당 약 135만원(계획가의 4.6%)을 더 받아야 하는데, 분양이 안 되는 국면에서 가격을 올리는 것은
+      성립하지 않는 조합입니다. 두 축은 독립이 아니라 <b>같은 방향으로 함께 나빠집니다</b> — 이것이 이 사업의 실질 위험입니다.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="shead"><span class="ax">대조</span><h2>실거래 단가를 대입하면</h2></div>
+  <p class="sub">국토부 실거래가 CSV(계약일 2025-09-08~2026-09-07)에서 뽑은 전용 기준 단가를 <b>84㎡A의 전용률 71.8%</b>(전용 25.69평 / 공급 35.80평)로 공급 기준으로 환산해 대입했습니다. 모두 분양률 100% 전제. 단위 억원.</p>
+  <div class="tw"><table>
+    <caption>사업지는 <b>수영구 민락동</b>입니다. 민락동 실거래를 공급 기준으로 환산하면 평당 <b>2,087~2,210만원</b> — 위 교차표의 최저 열(2,300만원)보다도 낮습니다.</caption>
+    <thead><tr><th scope="col">비교군</th><th scope="col">전용 평당가</th><th scope="col">표본 n</th>
+    <th scope="col">공급 환산</th><th scope="col">누적 DSCR</th><th scope="col">PF 상환</th><th scope="col">기말현금 / 미지급</th><th scope="col">비고</th></tr></thead>
+    <tbody><tr class="b-C"><th scope="row">민락동 준공10년내 84㎡</th><td class="num">3,080</td><td class="num">104</td><td class="num st">2,210</td><td class="num dsc">0.899<span class="x">x</span></td><td class="vd"><span class="chip c-C">상환 불가</span></td><td class="num">−591.4</td><td class="sm">심사 채택 비교군</td></tr><tr class="b-C"><th scope="row">민락동 84㎡ 전체</th><td class="num">2,909</td><td class="num">199</td><td class="num st">2,087</td><td class="num dsc">0.827<span class="x">x</span></td><td class="vd"><span class="chip c-C">상환 불가</span></td><td class="num">−742.6</td><td class="sm">연식 무관</td></tr><tr class="b-C"><th scope="row">민락동 오션테라스(2020)</th><td class="num">2,963</td><td class="num">24</td><td class="num st">2,126</td><td class="num dsc">0.850<span class="x">x</span></td><td class="vd"><span class="chip c-C">상환 불가</span></td><td class="num">−694.9</td><td class="sm">민락동 오션뷰 신축</td></tr><tr class="b-C"><th scope="row">해운대구 준공5년내 84㎡</th><td class="num">3,233</td><td class="num">90</td><td class="num st">2,320</td><td class="num dsc">0.964<span class="x">x</span></td><td class="vd"><span class="chip c-C">상환 불가</span></td><td class="num">−456.2</td><td class="sm">참조군</td></tr><tr class="b-A"><th scope="row">남천동 준공5년내 84㎡</th><td class="num">5,058</td><td class="num">77</td><td class="num st">3,630</td><td class="num dsc">1.732<span class="x">x</span></td><td class="vd"><span class="chip c-A">상환 가능</span></td><td class="num">+1,157.3</td><td class="sm">사업지 아님 — 표 A의 실체</td></tr></tbody>
+  </table></div>
+  <div class="warn"><b>계획 분양가는 사업지 실거래보다 33.5% 높습니다.</b> 민락동 준공 10년내 실거래(전용 3,080만원 → 공급 2,210만원)를 대입하면
+  402세대 전량이 팔려도 DSCR 0.899배로 PF 원금 211.4억이 미상환입니다. 상환 가능 구간에 들어가는 유일한 비교군은 <b>남천동 신축(공급 3,630만원)</b>이며, 사업지는 남천동이 아닙니다.</div>
+</section>
+
+<div class="concl">
+  <div class="eyebrow">한 줄 결론</div>
+  <h2>공급 평당 <u>2,950만원</u> / 분양률 <u>82%</u> 이상이면 PF 원금 상환 가능 — 후순위 380억까지 전액 지급하려면 <u>92%</u> 이상.</h2>
+  <p>분양률 100%를 전제하면 공급 평당 <b class="mono">2,382만원</b>까지 원금은 지켜지고, <b class="mono">2,690만원</b> 이상이면 기말현금이 남습니다.
+  그러나 이 결론은 <b>계획 분양가가 실현된다는 가정 위에서만</b> 성립합니다. 사업지 민락동의 실거래 환산 단가 <b class="mono">2,210만원</b>은
+  원금 상환선 <b class="mono">2,382만원</b>보다 <b>7.2% 낮아</b>, 그 수준에서는 완판해도 상환이 되지 않습니다.
+  <b>심사 의견은 조건부</b>이며, 분양가 하방을 <b class="mono">2,382만원</b> 위로 묶는 계약적 장치 — 인하 트리거 사전동의, 시공사 미분양 매입확약 또는 최소 411억 규모의 자금보충확약 — 이 확보되지 않으면 기표 부적격입니다.</p>
+</div>
+
+<div class="caveat">
+  <h3>이 표가 고정한 것 · 고정하지 못한 것</h3>
+  <ul>
+    <li><b>금융비용 458.1억 불변.</b> 분양이 지연되면 인출 기간이 늘어 이자가 증가하지만, 트랜치별 월별 인출 스케줄이 원자료에 없어 고정했습니다. 03_금융조건의 "전액 실행 가정"으로 재계산하면 425.0억으로 62.2억 과소 계상이며, 이를 반영하면 손익분기 분양률은 81.6% → 83.2%로 올라갑니다.</li>
+    <li><b>미분양 재고 가치 0.</b> 미분양담보대출 500억(연 9.0%, 만기 2029-12)을 전액 인출하면 상환선이 내려가 분양률 80%에서 평당 2,504만원, 85%에서 2,348만원까지 견딥니다. 다만 03_금융조건 6행의 기표·상환방식이 모두 공란이어서 실효성은 검증 불가입니다.</li>
+    <li><b>분양률은 아파트·근생에 동일 적용.</b> 근린생활시설 22호의 별도 분양 조건은 자료 없음이며, 축 2에서는 근생 단가를 계획가로 고정했습니다.</li>
+    <li><b>연 단위 배분.</b> 원자료가 연도별 대분류만 제공하므로 시점 내 자금 부족(2028년말 커버리지 0.909배, 192.0억 부족)은 이 표에 나타나지 않습니다. 만기 상환은 2029년 상반기 잔금 1,105.0억에 39.5% 의존합니다.</li>
+    <li><b>학교용지부담금·보증수수료는 분양금액에, 분양대행수수료는 세대수에 연동</b>했습니다(02_사업수지표 22·28·29·31·32행). 그 외 사업비는 전액 고정으로 두었습니다.</li>
+  </ul>
+  <div class="warn" style="margin-top:22px">원자료(01_사업계획서.pdf)에 <b>"교육용 합성(가상) 자료"</b>로 명시되어 있습니다. 사업장·시행사·시공사·수치는 전부 가상이며 실재하는 사업장·법인과 무관합니다. 투자 판단의 근거로 사용할 수 없습니다.</div>
+</div>
+</div>
+
+<script>
+(function(){
+  var tip=null;
+  function show(el){
+    var t=el.getAttribute('data-tip'); if(!t) return;
+    if(!tip){tip=document.createElement('div');tip.id='tip';document.body.appendChild(tip);}
+    tip.textContent=t; tip.hidden=false;
+    var r=el.getBoundingClientRect(), tr=tip.getBoundingClientRect();
+    var x=r.left+r.width/2-tr.width/2, y=r.top-tr.height-9;
+    if(y<6) y=r.bottom+9;
+    tip.style.left=Math.max(8,Math.min(x,window.innerWidth-tr.width-8))+'px';
+    tip.style.top=y+'px';
+  }
+  function hide(){ if(tip) tip.hidden=true; }
+  document.querySelectorAll('td.hc').forEach(function(c){
+    c.addEventListener('mouseenter',function(){show(c);});
+    c.addEventListener('mouseleave',hide);
+    c.addEventListener('focus',function(){show(c);});
+    c.addEventListener('blur',hide);
+  });
+  window.addEventListener('scroll',hide,{passive:true});
+})();
+</script>
+</body>
+</html>
